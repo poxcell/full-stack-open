@@ -3,14 +3,12 @@ const usersRouter = require('express').Router()
 const User = require('../models/user')
 
 usersRouter.post('/',async (request, response) => {
-  console.log('creating user')
 
   const body = request.body
 
   if(!body.username || body.username.length < 3 || !body.password || body.password.length < 3){
-    response.sendStatus(500).end()
+    response.send(500).end()
   }else{
-    console.log('correct request')
     const saltRounds = 10
     const passwordHash = await bcrypt.hash(body.password, saltRounds)
   
@@ -21,7 +19,6 @@ usersRouter.post('/',async (request, response) => {
     })
   
     try{
-      console.log('trying')
 
       const savedUser = await user.save()
     
@@ -41,6 +38,7 @@ usersRouter.get('/', async (request, response) => {
     .find({}).populate('blogs',{title:1,url:1,author:1})
   response.json(usersList)
 })
+
 
 usersRouter.delete('/:id', async (request, response) => {
   await User.findByIdAndRemove(request.params.id)

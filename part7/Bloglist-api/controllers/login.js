@@ -4,8 +4,13 @@ const loginRouter = require('express').Router()
 const User = require('../models/user')
 
 loginRouter.post('/', async (request, response) => {
-  console.log('logging')
   const body = request.body
+  console.log(body.username,body.password)
+  if(body.password === undefined){
+    return response.status(401).json({
+      error:' introduce a password'
+    })
+  }
 
   const user = await User.findOne({username: body.username})
   const passwordCorrect = user === null
