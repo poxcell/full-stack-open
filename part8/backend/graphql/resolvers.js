@@ -1,8 +1,17 @@
-const { UserInputError,AuthenticationError } = require('apollo-server')
+const { UserInputError,AuthenticationError } = require('apollo-server-express')
 const Book = require('../schema/Book')
 const Author = require('../schema/Author')
 const User = require('../schema/User')
 const bcrypt = require('bcrypt')
+const { PubSub } = require('graphql-subscriptions')
+const jwt = require('jsonwebtoken')
+
+
+const pubsub = new PubSub()
+
+require('dotenv').config()
+const JWT_PK = process.env.JWT_SEKRET
+
 
 const resolvers = {
   Query: {
@@ -26,7 +35,7 @@ const resolvers = {
     },
     allAuthors: async (root, args) =>{
       if(!args.name){
-        return await Author.find({})
+        return await Author.find({}).populate('bookCount')
       }
       return await Author.find({name:args.name})
     }, 
@@ -37,7 +46,12 @@ const resolvers = {
   Author:{
     books:async (root) => await Book.find({author: root._id})
     ,
-    bookCount: async (root) =>  (await  Book.find({author:root._id})).length
+    bookCount: async (root) =>  {
+
+      const books = (await  Book.find({author:root._id})).length
+      console.log('found book')
+      return books
+    }
   },
   Book:{
     author: async (root) => await Author.findOne({_id: root.author})
@@ -63,10 +77,9 @@ const resolvers = {
 
       book.author = author
       try{
-
         await author.save()
         await book.save()
-        
+        pubsub.publish('BOOK_ADDED',{ bookAdded : book})
       }catch(error){
         throw new UserInputError(error.message,{
           invalidArgs: args,
@@ -134,7 +147,13 @@ const resolvers = {
       )
       return {value:token}
     }
-  } 
+  },
+
+  Subscription:{
+    bookAdded:{
+      subscribe: () => pubsub.asyncIterator(['BOOK_ADDED'])
+    }
+  }
 }
 
 module.exports = resolvers

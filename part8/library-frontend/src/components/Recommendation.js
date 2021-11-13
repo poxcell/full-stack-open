@@ -10,8 +10,12 @@ const Recommendation = ({show}) => {
   
   useEffect(() => {
     if(!loading){
-      setFavoriteGenre(data.me.favoriteGenre)
-      execQuery({variables:{genre:data.me.favoriteGenre}})
+      
+      if(data.me != null){
+
+        setFavoriteGenre(data.me.favoriteGenre)
+        execQuery({variables:{genre:data.me.favoriteGenre}})
+      }
     }
   },[data])  //eslint-disable-line
 
